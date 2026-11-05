@@ -22,6 +22,7 @@ jobs:
       contents: read
       pull-requests: write
       issues: write
+      id-token: write # lets the action sign in to the Claude GitHub App
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
