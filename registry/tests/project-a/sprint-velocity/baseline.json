@@ -1,0 +1,31 @@
+{
+  "skill": "sprint-velocity",
+  "project": "project-a",
+  "commit": "db5587edba7ec7a62d4479e4b538e28eed08dd19",
+  "date": "2026-11-05",
+  "total": 45,
+  "checks": {
+    "structure": 10,
+    "description": 5,
+    "instructions": 1,
+    "disclosure": 10,
+    "triggers": 8,
+    "safety": 10,
+    "family": 1
+  },
+  "family": "Data / analysis",
+  "trigger_results": {
+    "should": "4/10",
+    "should_not": "4/10"
+  },
+  "case_results": {
+    "passed": 0,
+    "total": 4,
+    "failed_ids": [
+      "basic-average",
+      "missing-sprint-edge",
+      "committed-vs-done",
+      "small-sample"
+    ]
+  }
+}

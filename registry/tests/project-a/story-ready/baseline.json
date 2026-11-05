@@ -1,0 +1,29 @@
+{
+  "skill": "story-ready",
+  "project": "project-a",
+  "commit": "db5587edba7ec7a62d4479e4b538e28eed08dd19",
+  "date": "2026-11-05",
+  "total": 85,
+  "checks": {
+    "structure": 10,
+    "description": 20,
+    "instructions": 11,
+    "disclosure": 10,
+    "triggers": 16,
+    "safety": 10,
+    "family": 8
+  },
+  "family": "Workflow / process",
+  "trigger_results": {
+    "should": "9/10",
+    "should_not": "7/10"
+  },
+  "case_results": {
+    "passed": 3,
+    "total": 5,
+    "failed_ids": [
+      "vague-story",
+      "multiple-stories"
+    ]
+  }
+}

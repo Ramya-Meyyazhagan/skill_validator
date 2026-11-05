@@ -1,0 +1,23 @@
+# DRAFT - review before merging
+should_trigger:
+  - "Is this user story ready for sprint planning?"
+  - "Check this story against INVEST."
+  - "Review the acceptance criteria on this story."
+  - "Can you improve this user story before refinement?"
+  - "Does this story meet our Definition of Ready?"
+  - "Here's PB-220 - any gaps before we bring it to sprint planning?"
+  - "Improve these acceptance criteria so they use Given/When/Then."
+  - "Is this ticket small enough to fit in one sprint?"
+  - "Sanity-check this story before backlog grooming."
+  - "What's wrong with this story: 'As a user I want a better dashboard'?"
+should_not_trigger:
+  - "Write user stories for a new login feature."
+  - "Estimate story points for these stories."
+  - "Write release notes from these completed stories."
+  - "Calculate our velocity so we know how much to take into sprint planning."
+  - "Split this epic into smaller user stories."
+  - "Prioritize these backlog items for next sprint."
+  - "Review this pull request."
+  - "Create a Definition of Ready checklist for our team."
+  - "Write test cases from these acceptance criteria."
+  - "Draft an agenda for our refinement meeting."

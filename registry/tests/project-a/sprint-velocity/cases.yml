@@ -1,0 +1,24 @@
+# DRAFT - review before merging
+cases:
+  - id: basic-average
+    input: "Sprint 21: 30 points done; Sprint 22: 24 points done; Sprint 23: 33 points done"
+    expect:
+      - "Reports average velocity of 29 points per sprint"
+      - "Shows the method or formula used (sum / number of sprints)"
+      - "Computes the number rather than estimating it"
+  - id: missing-sprint-edge
+    input: "Sprint 10: 28 points; Sprint 11: no data; Sprint 12: 31 points"
+    expect:
+      - "Explicitly flags that Sprint 11 has no data"
+      - "Does not treat Sprint 11 as 0 points"
+      - "States how the missing sprint was handled in the average"
+  - id: committed-vs-done
+    input: "Sprint 5: committed 40, done 32; Sprint 6: committed 38, done 35; Sprint 7: committed 42, done 30"
+    expect:
+      - "Velocity is based on completed points only, not committed points"
+      - "Reports the completed vs committed ratio per sprint"
+  - id: small-sample
+    input: "Sprint 1: 18 points; Sprint 2: 26 points. Are we improving?"
+    expect:
+      - "Warns that two sprints are too few to call a trend"
+      - "Does not claim the team is improving as a fact"
