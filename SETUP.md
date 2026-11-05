@@ -38,3 +38,13 @@ your-repo/
 - You pay per run through your Anthropic API credit. A few skills per PR is usually small; set a monthly spend limit in the Anthropic Console.
 - The validator only reads files. It is never allowed to run scripts inside the skills it checks.
 - Keep this repo personal: use public skills for testing, never employer code or internal plugins.
+
+## Maintenance mode setup (watching other project repos)
+
+1. **List the projects** in `registry/projects.yml` (repo, branch, skills folder, minimum score).
+2. **Allow pull requests from Actions:** this repo → Settings → Actions → General → Workflow permissions → tick **"Allow GitHub Actions to create and approve pull requests"** → Save.
+3. **Private project repos only:** create a fine-grained GitHub token with **Contents: Read-only** on those repos, and add it here as a secret named `PROJECTS_READ_TOKEN`. Public repos need nothing.
+4. **First run:** Actions → Watch Skill Projects → Run workflow. The first run validates every skill and drafts tests for any skill that has none.
+5. **Review the Baseline update pull request,** fix the drafted tests if needed, and merge it. From then on, only changed skills are re-validated, and each one is compared with this baseline.
+
+Moving to an organization later: put this repo in the org, use an org-level `ANTHROPIC_API_KEY` secret, and replace `PROJECTS_READ_TOKEN` with a GitHub App or org-scoped read-only token.

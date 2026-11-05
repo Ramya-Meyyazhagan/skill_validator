@@ -35,3 +35,26 @@ Copy `skill-validator/` into your skills folder (for example `~/.claude/skills/`
 The SKILL.md format is an open standard, so the validator also works in other agent tools that read it.
 
 Built by Ramya Meyyazhagan.
+
+## Maintenance mode: watch many projects
+
+Once skill projects are built, the validator can watch them and re-test any skill that changes.
+
+```
+registry/
+├── projects.yml                 which project repos to watch
+├── state/<project>.json         last commit already validated (written automatically)
+└── tests/<project>/<skill>/
+    ├── triggers.yml             should / should-not prompts
+    ├── cases.yml                test inputs + expected behavior
+    └── baseline.json            last approved score
+```
+
+`.github/workflows/watch-projects.yml` runs every 2 hours, on demand, or instantly when a project sends a ping (`examples/project-instant-trigger.yml`). For each project it:
+
+1. Finds skills whose files changed since the last validated commit.
+2. Runs the rubric plus that skill's stored tests, and compares with the baseline.
+3. Posts a scorecard on the project's issue (`skill-validation:<project>`), flagging regressions.
+4. Opens a **Baseline update** pull request with the new scores and any drafted tests for new skills. Merging approves them; closing keeps the old baseline.
+
+Project repos need no CI and no changes. See [registry/tests/README.md](registry/tests/README.md) for the test file formats.

@@ -1,0 +1,26 @@
+# OPTIONAL. Copy into a project repo as .github/workflows/notify-skill-validator.yml
+# to get results within minutes instead of waiting for the 2-hour watch.
+#
+# Needs one secret in the PROJECT repo:
+#   VALIDATOR_DISPATCH_TOKEN = a fine-grained token with "Contents: read and write"
+#   on the central validator repo only (it is used just to send the ping).
+
+name: Notify Skill Validator
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "skills/**"
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping the central validator
+        env:
+          GH_TOKEN: ${{ secrets.VALIDATOR_DISPATCH_TOKEN }}
+        run: |
+          gh api repos/Ramya-Meyyazhagan/skill_validator_check1/dispatches \
+            -f event_type=skills-changed \
+            -f "client_payload[project]=project-a"

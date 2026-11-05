@@ -1,0 +1,199 @@
+name: Watch Skill Projects
+
+# Maintenance mode: watches every project in registry/projects.yml and re-validates
+# any skill whose files changed since the last validated commit.
+#
+# Triggers:
+#   - schedule: every 2 hours
+#   - manual:   Actions tab -> Watch Skill Projects -> Run workflow
+#   - instant:  a project repo sends a "skills-changed" repository_dispatch (optional)
+#
+# Output per project with changes:
+#   - an issue labelled skill-validation:<project> with the scorecard
+#   - a pull request "Baseline update: <project>" with new scores and any drafted tests
+#     (merge = approve as the new baseline, close = keep the old one)
+
+on:
+  schedule:
+    - cron: "17 */2 * * *"
+  workflow_dispatch:
+    inputs:
+      project:
+        description: "Only this project (leave empty for all)"
+        required: false
+        default: ""
+      force_all:
+        description: "Re-validate every skill, ignoring saved state"
+        type: boolean
+        default: false
+  repository_dispatch:
+    types: [skills-changed]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.find.outputs.matrix }}
+      has_work: ${{ steps.find.outputs.has_work }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install YAML reader
+        run: pip install --quiet pyyaml
+
+      - name: Find changed skills in each project
+        id: find
+        env:
+          ONLY_PROJECT: ${{ inputs.project || github.event.client_payload.project || '' }}
+          FORCE_ALL: ${{ inputs.force_all || 'false' }}
+          PROJECTS_READ_TOKEN: ${{ secrets.PROJECTS_READ_TOKEN }}
+        run: python3 scripts/detect_changes.py
+
+  validate:
+    needs: detect
+    if: needs.detect.outputs.has_work == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix: ${{ fromJson(needs.detect.outputs.matrix) }}
+    concurrency:
+      group: validate-${{ matrix.project }}
+      cancel-in-progress: false
+    env:
+      PROJECT: ${{ matrix.project }}
+      SHA: ${{ matrix.sha }}
+      REPO: ${{ matrix.repo }}
+      MIN_SCORE: ${{ matrix.min_score }}
+      REMOVED: ${{ matrix.removed }}
+      OWNER: ${{ matrix.owner }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set git identity
+        run: |
+          git config user.name "skill-validator[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Check out the project at the changed commit (read-only)
+        if: matrix.skills != ''
+        env:
+          PROJECTS_READ_TOKEN: ${{ secrets.PROJECTS_READ_TOKEN }}
+        run: |
+          AUTH=""
+          if [ -n "$PROJECTS_READ_TOKEN" ]; then AUTH="x-access-token:${PROJECTS_READ_TOKEN}@"; fi
+          git clone --quiet --filter=blob:none "https://${AUTH}github.com/${REPO}.git" target
+          git -C target checkout --quiet "$SHA"
+          rm -rf target/.git
+          mkdir -p out
+
+      - name: Install Claude Code
+        if: matrix.skills != ''
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run the validator
+        if: matrix.skills != ''
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SKILLS: ${{ matrix.skills }}
+          SKILLS_PATH: ${{ matrix.skills_path }}
+        run: |
+          python3 - <<'PY'
+          import os, pathlib
+          text = pathlib.Path("prompts/validate-project.md").read_text()
+          for key in ["PROJECT", "SHA", "SKILLS", "SKILLS_PATH", "MIN_SCORE"]:
+              text = text.replace("{{" + key + "}}", os.environ.get(key, ""))
+          text = text.replace("{{REMOVED}}", os.environ.get("REMOVED") or "none")
+          pathlib.Path("out/prompt.md").write_text(text)
+          PY
+          claude -p "$(cat out/prompt.md)" \
+            --allowedTools "Read,Glob,Grep,Write" \
+            --max-turns 40 > out/claude.log 2>&1 || echo "Claude exited with an error; see out/claude.log"
+          tail -n 20 out/claude.log
+
+      - name: Build report and proposed baselines
+        if: matrix.skills != ''
+        id: report
+        run: python3 scripts/report.py
+
+      - name: Open or update the baseline pull request
+        if: matrix.skills != '' && steps.report.outputs.changed_baselines == 'true'
+        id: pr
+        continue-on-error: true
+        run: |
+          BRANCH="registry/${PROJECT}"
+          git checkout -B "$BRANCH"
+          git add "registry/tests/${PROJECT}"
+          if git diff --cached --quiet; then
+            echo "No baseline or test changes."; exit 0
+          fi
+          git commit -q -m "Baseline update: ${PROJECT} at ${SHA:0:7}"
+          git push -q -f origin "$BRANCH"
+          URL=$(gh pr list --head "$BRANCH" --state open --json url --jq '.[0].url')
+          if [ -z "$URL" ]; then
+            URL=$(gh pr create --head "$BRANCH" --base main \
+              --title "Baseline update: ${PROJECT}" \
+              --body-file out/issue.md)
+          else
+            gh pr edit "$URL" --body-file out/issue.md
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Post the report as an issue
+        if: matrix.skills != ''
+        run: |
+          LABEL="skill-validation:${PROJECT}"
+          gh label create "$LABEL" --color "5319e7" --description "Skill Validator reports" --force >/dev/null
+          if [ -n "${{ steps.pr.outputs.url }}" ]; then
+            printf '\n**Baseline pull request:** %s\n' "${{ steps.pr.outputs.url }}" >> out/issue.md
+          elif [ "${{ steps.pr.outcome }}" = "failure" ]; then
+            printf '\n> Could not open the baseline pull request. In this repo, turn on Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests". The branch registry/%s was still pushed.\n' "$PROJECT" >> out/issue.md
+          fi
+          ISSUE=$(gh issue list --label "$LABEL" --state open --json number --jq '.[0].number')
+          if [ -z "$ISSUE" ]; then
+            gh issue create --title "Skill validation: ${PROJECT}" --label "$LABEL" --body-file out/issue.md
+          else
+            gh issue comment "$ISSUE" --body-file out/issue.md
+          fi
+
+      - name: Save run files
+        if: always() && matrix.skills != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-${{ matrix.project }}
+          path: out/
+          if-no-files-found: warn
+
+      - name: Record the validated commit
+        run: |
+          git checkout -q -f main
+          for attempt in 1 2 3; do
+            git pull -q --rebase origin main
+            mkdir -p registry/state
+            printf '{"project": "%s", "last_checked_sha": "%s", "last_checked_at": "%s"}\n' \
+              "$PROJECT" "$SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "registry/state/${PROJECT}.json"
+            git add "registry/state/${PROJECT}.json"
+            git diff --cached --quiet && exit 0
+            git commit -q -m "Watcher state: ${PROJECT} checked at ${SHA:0:7} [skip ci]"
+            git push -q origin main && exit 0
+            git reset -q --hard origin/main
+            sleep 5
+          done
+          echo "Could not save state after 3 tries"; exit 1
+
+      - name: Mark the run red if a skill needs attention
+        if: matrix.skills != ''
+        run: |
+          case "${{ steps.report.outputs.status }}" in
+            fail|regression|critical|error) echo "Status: ${{ steps.report.outputs.status }}"; exit 1 ;;
+            *) echo "Status: ${{ steps.report.outputs.status }}" ;;
+          esac

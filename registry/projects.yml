@@ -1,0 +1,12 @@
+# Skill projects the validator watches.
+# Add one entry per project repo. The watcher checks each one for SKILL.md
+# changes since the last validated commit and validates only what changed.
+
+projects:
+  - name: project-a                       # short id, used for folders and labels
+    repo: Ramya-Meyyazhagan/project-a      # owner/repo on GitHub
+    branch: main                          # branch to watch
+    skills_path: skills                   # folder in that repo holding <skill>/SKILL.md
+    min_score: 75                         # a skill below this is reported as failing
+    owner: Ramya-Meyyazhagan              # GitHub user tagged on reports
+    private: false                        # true = needs the PROJECTS_READ_TOKEN secret
