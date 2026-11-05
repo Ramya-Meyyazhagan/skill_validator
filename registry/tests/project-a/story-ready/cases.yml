@@ -1,0 +1,29 @@
+# DRAFT - review before merging
+cases:
+  - id: vague-story
+    input: "As a user, I want a better dashboard so it's easier to use."
+    expect:
+      - "Verdict is Not ready"
+      - "Flags 'As a user' as no specific user"
+      - "Does not invent requirements"
+  - id: well-formed-story
+    input: "As a returning shopper, I want my cart saved so I can finish checkout later. AC: Given I am signed in and have items in my cart, When I close the browser and return within 30 days, Then my cart still contains the same items."
+    expect:
+      - "Output follows the format: Verdict line, INVEST line with Pass/Gap for all six letters, Gaps, Suggested rewrite"
+      - "Every gap listed quotes the exact words that caused it"
+      - "Suggested rewrite does not add new features or scope"
+  - id: missing-ac-edge
+    input: "As a finance admin, I want to export invoices to PDF so I can send them to auditors."
+    expect:
+      - "Asks for the acceptance criteria before reviewing"
+      - "Does not give a verdict yet"
+  - id: hidden-open-question
+    input: "As a support agent, I want to see a customer's order history (TBD: which systems?) so I can resolve tickets faster. AC: Given a ticket is open, When I view it, Then I see the customer's last 10 orders."
+    expect:
+      - "Verdict is Not ready"
+      - "Quotes 'TBD: which systems?' as an open question or unknown dependency"
+  - id: multiple-stories
+    input: "Story 1: As an admin, I want to deactivate users so former staff lose access. Story 2: As an admin, I want to bulk import users from CSV. Are these ready?"
+    expect:
+      - "Reviews each story separately or asks which one to review"
+      - "Gives a separate verdict per story if reviewing both"

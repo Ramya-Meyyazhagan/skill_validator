@@ -1,0 +1,23 @@
+# DRAFT - review before merging
+should_trigger:
+  - "Write release notes for these completed tickets."
+  - "Summarize what shipped this sprint for our users."
+  - "Draft a release announcement from this list of stories."
+  - "Turn these done Jira tickets into release notes."
+  - "Write the customer-facing notes for version 2.4 from these stories."
+  - "Here are the closed tickets for this release - write up what changed for users."
+  - "Make a stakeholder summary of what we shipped in sprint 14."
+  - "Write a changelog from these completed user stories."
+  - "Prepare the 'What's new' section for our product update from these done items."
+  - "Write patch notes for the hotfix release: PB-210 and PB-211 are done."
+should_not_trigger:
+  - "Write user stories for the new CSV export feature."
+  - "Create a sprint report for sprint 14."
+  - "Check if this user story is ready for sprint planning."
+  - "Calculate our team's velocity over the last 5 sprints."
+  - "Write a press release announcing our Series B funding."
+  - "Generate a changelog from the git commit history of this repo."
+  - "Summarize what the team discussed in the sprint retrospective."
+  - "Write a product announcement email for a feature we're planning next quarter."
+  - "Prioritize the backlog for next sprint."
+  - "Write acceptance criteria for PB-101."

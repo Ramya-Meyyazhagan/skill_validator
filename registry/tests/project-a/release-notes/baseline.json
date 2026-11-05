@@ -1,0 +1,28 @@
+{
+  "skill": "release-notes",
+  "project": "project-a",
+  "commit": "db5587edba7ec7a62d4479e4b538e28eed08dd19",
+  "date": "2026-11-05",
+  "total": 90,
+  "checks": {
+    "structure": 10,
+    "description": 24,
+    "instructions": 12,
+    "disclosure": 10,
+    "triggers": 17,
+    "safety": 10,
+    "family": 7
+  },
+  "family": "Writing / style",
+  "trigger_results": {
+    "should": "9/10",
+    "should_not": "8/10"
+  },
+  "case_results": {
+    "passed": 4,
+    "total": 5,
+    "failed_ids": [
+      "nothing-done-edge"
+    ]
+  }
+}

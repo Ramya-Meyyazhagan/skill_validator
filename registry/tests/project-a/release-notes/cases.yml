@@ -1,0 +1,30 @@
+# DRAFT - review before merging
+cases:
+  - id: mixed-new-improved-fixed
+    input: "PB-101 Add CSV export to reports (done); PB-102 Fix login timeout on Safari (done); PB-103 Make dashboard load twice as fast (done)"
+    expect:
+      - "Groups items under What's new, Improvements and Fixes"
+      - "User-facing lines contain no ticket numbers"
+      - "Each user-facing line describes the benefit, not the technical change"
+      - "Includes a stakeholder summary of 3 to 5 bullets"
+  - id: not-done-excluded
+    input: "PB-110 Add dark mode (done); PB-111 Bulk delete users (in progress); PB-112 Fix typo on pricing page (done)"
+    expect:
+      - "Bulk delete / PB-111 is not mentioned anywhere in the output"
+      - "Dark mode and the pricing-page fix are included"
+  - id: unclear-benefit
+    input: "PB-130 Refactor auth middleware (done); PB-131 Upgrade to Postgres 16 (done)"
+    expect:
+      - "Both items are listed under Needs PO review"
+      - "No user benefit is invented for either item"
+  - id: known-issue
+    input: "PB-140 Add CSV export (done). Known issue: export fails for reports over 10,000 rows."
+    expect:
+      - "Stakeholder summary mentions the 10,000-row export known issue"
+      - "No workaround or fix date is invented"
+  - id: nothing-done-edge
+    input: "Sprint 15 stories: PB-150 Add SSO (in progress); PB-151 Audit log (not started)"
+    expect:
+      - "States that no stories are done, so there is nothing to release"
+      - "Does not output empty headings or invented items"
+      - "Asks the user to confirm or provide the completed list"

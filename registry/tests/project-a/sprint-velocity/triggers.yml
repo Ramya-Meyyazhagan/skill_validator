@@ -1,0 +1,23 @@
+# DRAFT - review before merging
+should_trigger:
+  - "Calculate our team's velocity for the last 6 sprints."
+  - "What's our average story points per sprint?"
+  - "Here's our Jira export - how is the team's throughput trending?"
+  - "Chart our velocity over the last quarter."
+  - "How many points should we plan for next sprint based on history?"
+  - "Is our velocity getting better or worse?"
+  - "Analyze this sprint data: Sprint 1 32 pts, Sprint 2 28 pts, Sprint 3 35 pts."
+  - "Compare committed vs completed story points for each iteration."
+  - "Give me insights on how the team is doing based on our burndown data."
+  - "Work out the team's velocity from this CSV."
+should_not_trigger:
+  - "Write release notes for what shipped this sprint."
+  - "Is this story ready for sprint planning?"
+  - "Draft the agenda for our sprint retrospective."
+  - "Estimate story points for these three stories."
+  - "Write a sprint goal for next sprint."
+  - "Calculate the average revenue per customer from this sales CSV."
+  - "Explain what velocity means in Scrum."
+  - "Create a blank burndown chart template in Excel."
+  - "Summarize the sprint review meeting notes."
+  - "Plan the sprint backlog for the next two weeks."
