@@ -68,7 +68,7 @@ jobs:
                 gh pr comment ${{ github.event.pull_request.number }} --body-file validation-report.md
           claude_args: |
             --max-turns 30
-            --allowedTools Read,Glob,Grep,Write,Bash(gh pr comment:*)
+            --allowedTools "Read,Glob,Grep,Write,Bash(gh pr comment:*)"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
