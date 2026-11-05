@@ -1,0 +1,99 @@
+name: Validate Skills
+
+# Runs the Skill Validator on every pull request that adds or changes a skill,
+# posts the scorecard as a PR comment, and fails the check if any skill scores
+# below the minimum or has a critical safety issue.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "skills/**"
+      - "**/SKILL.md"
+  workflow_dispatch: # lets you run it by hand from the Actions tab
+
+env:
+  MIN_SCORE: "60" # change to 75 once your skills are mature
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so the diff against main works
+
+      - name: Find changed skills
+        id: changed
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="origin/${{ github.base_ref }}"
+            SKILLS=$(git diff --name-only "$BASE"...HEAD \
+              | grep -E '(^|/)skills/[^/]+/' \
+              | sed -E 's#^(.*skills/[^/]+)/.*#\1#' | sort -u | tr '\n' ' ')
+          else
+            SKILLS=$(ls -d skills/*/ 2>/dev/null | sed 's#/$##' | tr '\n' ' ')
+          fi
+          echo "skills=$SKILLS" >> "$GITHUB_OUTPUT"
+          echo "Skills to validate: $SKILLS"
+
+      - name: Run Skill Validator with Claude
+        if: steps.changed.outputs.skills != ''
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Read skill-validator/SKILL.md and follow it exactly.
+
+            Validate each of these skill folders: ${{ steps.changed.outputs.skills }}
+            If there is more than one, also run Collection mode against every
+            folder under skills/ so trigger collisions are caught.
+
+            Rules for this automated run:
+            - Read files only. Never run any script inside a skill.
+            - Write the full report to validation-report.md.
+            - Write validation-result.txt with exactly two lines:
+                LOWEST_SCORE=<lowest total score among validated skills>
+                CRITICAL=<yes or no>
+            - If PR NUMBER is not empty, post validation-report.md as a PR comment with:
+                gh pr comment ${{ github.event.pull_request.number }} --body-file validation-report.md
+          claude_args: |
+            --max-turns 30
+            --allowedTools Read,Glob,Grep,Write,Bash(gh pr comment:*)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Save the report
+        if: always() && steps.changed.outputs.skills != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: skill-validation-report
+          path: |
+            validation-report.md
+            validation-result.txt
+          if-no-files-found: warn
+
+      - name: Pass or fail the check
+        if: steps.changed.outputs.skills != ''
+        run: |
+          if [ ! -f validation-result.txt ]; then
+            echo "No result file was written. Check the Claude step log."; exit 1
+          fi
+          cat validation-result.txt
+          LOWEST=$(grep -E '^LOWEST_SCORE=' validation-result.txt | cut -d= -f2 | tr -dc '0-9')
+          CRITICAL=$(grep -E '^CRITICAL=' validation-result.txt | cut -d= -f2 | tr -d '[:space:]')
+          if [ "$CRITICAL" = "yes" ]; then
+            echo "Critical safety issue found. See the PR comment."; exit 1
+          fi
+          if [ -z "$LOWEST" ] || [ "$LOWEST" -lt "$MIN_SCORE" ]; then
+            echo "Lowest score ${LOWEST:-unknown} is below $MIN_SCORE."; exit 1
+          fi
+          echo "All skills scored $MIN_SCORE or higher."
