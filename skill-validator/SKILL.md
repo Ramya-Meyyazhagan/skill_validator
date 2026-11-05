@@ -48,14 +48,16 @@ Quote the exact lines behind every finding.
 ### A. Structure (10)
 - SKILL.md at `<skill-name>/SKILL.md`, not nested deeper. (3)
 - Frontmatter opens and closes with `---` and parses. (3)
-- `name`: lowercase, hyphens, under 64 characters, matches folder. (2)
-- `description` present and non-empty. (2)
+- `name`: only lowercase letters, numbers and hyphens; at most 64 characters; no XML tags; does not contain the reserved words "anthropic" or "claude"; matches the folder name. (2)
+- `description`: present, non-empty, at most 1024 characters, no XML tags. (2)
+
+A `name` or `description` that breaks these limits can be rejected when the skill is uploaded, so report it as a CRITICAL issue (not a safety issue) and list it first.
 
 ### B. Description quality (25)
 - States WHAT the skill does in plain words. (6)
 - States WHEN to use it, with phrases a user would actually type. (8)
 - Specific enough not to fire on unrelated requests; broad enough for real ones. (6)
-- Under about 1024 characters; no marketing language. (5)
+- Concise (well under the 1024-character limit), written in third person, no marketing language. (5)
 
 ### C. Instructions quality (15)
 - Clear ordered steps a model can follow without guessing. (5)
@@ -64,7 +66,7 @@ Quote the exact lines behind every finding.
 - No contradictions or vague words ("as needed", "handle appropriately"). (3)
 
 ### D. Progressive disclosure (10)
-- SKILL.md body is focused; long reference material lives in separate files. (5)
+- SKILL.md body is under about 500 lines; long reference material lives in separate files. (5)
 - Every referenced file exists and is clearly named. (3)
 - SKILL.md says when to open each referenced file. (2)
 
@@ -73,6 +75,8 @@ Write 10 prompts that SHOULD trigger the skill and 10 near-miss prompts that sho
 - Should-trigger prompts clearly matched: 1 point each, max 10.
 - Near-misses correctly excluded: 1 point each, max 10.
 List all 20 with your judgment so they can be re-run live.
+
+These results are PREDICTED from the description, not measured by running an agent. Say so in the report ("predicted trigger results") so they are not mistaken for live tests.
 
 ### F. Safety (10)
 - List every script and what it does; flag file deletion, network calls, credential access. (4)
